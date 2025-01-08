@@ -1,9 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/apiError.js"
 import {User} from "../models/Users.models.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {uplodeFileToCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/apiResponse.js"
-
 
 const registorUser =  asyncHandler( async (req, res) => {
     //taking input from the user 
@@ -19,7 +18,7 @@ const registorUser =  asyncHandler( async (req, res) => {
     const {username, fullName, email, password} = req.body
     
     if (
-        [fullName, email, username, password].some((field) => field?.trim()==="")
+        [fullName, email, username, password].some((field) => field?.trim()===" ")
     ) {
         throw new ApiError(400,"All fields are required")
     }
@@ -28,22 +27,22 @@ const registorUser =  asyncHandler( async (req, res) => {
         $or :[{email}, {username}]
     })
 
-    if (!existedUser) {
+    if (existedUser) {
         throw new ApiError(409, "User already exist")
     }
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.conerImage[0]?.path;
+    const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avater is required")
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    const avatar = await uplodeFileToCloudinary(avatarLocalPath)
+    const coverImage = await uplodeFileToCloudinary(coverImageLocalPath)    
 
     if (!avatar) {
-        throw new ApiError(400, "Avater is required")
+        throw new ApiError(500, "Aveter is required")
     }
 
     const user = await User.create(
