@@ -3,7 +3,7 @@ import dotenv from "dotenv"
 import app from "./app.js";
 
 dotenv.config({
-    path:"./.env"
+    path: "./.env"  
 })
 
 
@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 8000
 connectDB()
 .then((e) => {
   app.listen(PORT, (par) => {
-    console.log(`app is listening at port ${PORT}`);
+    console.log(`server is listening at port ${PORT}`);
     })
 })
 .catch((params) => {
