@@ -5,6 +5,9 @@ import {uplodeFileToCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
 
+
+
+
 const generateAccessAndRefreshToken = async (UserId) => {
   try {
     const user = await User.findById(UserId)
@@ -314,10 +317,84 @@ const updateCoverImage = asyncHandler(async (req, res) => {
 
     return res
     .status(200)
-    .json(new ApiResponse(201, user, "Cover image is updated successfully"))
-
-    
+    .json(new ApiResponse(201, user, "Cover image is updated successfully")) 
 })
+
+const getUserChannelProfile =  asyncHandler(async (req, res) => {
+    const {username} = req.params
+
+    if (!username?.trim()) {
+        throw new ApiError(401, "Username is missing")
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {username}
+        },
+
+        {
+            $lookup: {
+                field: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+
+        {
+            $lookup: {
+                field: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+
+        {
+            $addFields: {
+                subscriberCount: {
+                    $size: "$subscribers"
+                },
+                channelsubscribedToCount: {
+                    $size:"subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id,"$subscribers.subscribers"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+
+        {
+            $project:{
+                fullName: 1,
+                username: 1,
+                subscriberCount: 1,
+                channelsubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+    ])
+
+    if (!channel?.length) {
+        throw new ApiError(404, "channel does not exists")
+    }
+
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(201, channel[0], "User channel fatched successfully")
+    )
+})
+
+
 
 
 export {
@@ -329,5 +406,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateAvatar,
-    updateCoverImage
+    updateCoverImage,
+    getUserChannelProfile
     }
